@@ -1,0 +1,32 @@
+services:
+  qwen3-tts:
+    build: .
+    image: qwen3-tts-local-api:latest
+    container_name: qwen3-tts
+    ports:
+      # Host LAN access: http://<host-lan-ip>:8000
+      - "8000:8000"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      # 12GB VRAM default
+      MODEL_ID: "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+      DEVICE: "cuda:0"
+      DTYPE: "bfloat16"
+      # Set if you want a shared LAN API key (optional)
+      API_KEY: ""
+      ATTN_IMPLEMENTATION: ""
+      HF_HOME: /cache/huggingface
+    volumes:
+      - hf-cache:/cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  hf-cache:
