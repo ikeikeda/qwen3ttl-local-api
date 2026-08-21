@@ -20,9 +20,11 @@ OpenAI 互換の `POST /v1/audio/speech` を `0.0.0.0` で待ち受け、LAN 内
 | GPU | NVIDIA / VRAM **12GB** |
 | モデル | `Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice`（約 8GB） |
 | OS | Linux + NVIDIA Driver + CUDA |
-| その他 | Docker（推奨）または Python 3.12 + ffmpeg |
+| その他 | Docker（推奨）または [uv](https://docs.astral.sh/uv/) + ffmpeg |
 
 VRAM が足りない場合は `MODEL_ID=Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice` に切り替えてください。
+
+Python バージョンは **uv が 3.12 を自動取得**します（`.python-version` / `requires-python`）。システムの `python3` を揃える必要はありません。
 
 ## クイックスタート（Docker）
 
@@ -58,25 +60,50 @@ curl -X POST http://192.168.1.20:8000/v1/audio/speech \
 
 ホストのファイアウォールで **TCP 8000** を LAN に許可してください。
 
-## ローカル Python 起動
+## ローカル起動（uv）
+
+[uv](https://docs.astral.sh/uv/) が入っていなければ:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -U pip
-pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
-pip install -r requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source "$HOME/.local/bin/env"
+```
 
-cp .env.example .env
-python -m app.main
+一括セットアップ（Python 3.12 の確保 + `.venv` + 依存関係）:
+
+```bash
+./scripts/bootstrap.sh
+# または手動:
+# uv sync --group dev
+```
+
+起動:
+
+```bash
+cp -n .env.example .env
+uv run python -m app.main
 ```
 
 モデル先行ダウンロード（任意）:
 
 ```bash
-python scripts/download_model.py --model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+uv run python scripts/download_model.py --model Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
 ```
 
+テスト:
+
+```bash
+uv run pytest
+```
+
+よく使うコマンド:
+
+| コマンド | 内容 |
+|----------|------|
+| `uv sync` | `.venv` 作成・依存同期（Python 3.12 も必要なら取得） |
+| `uv run ...` | 仮想環境を意識せず実行 |
+| `uv lock` | `uv.lock` を更新 |
+| `uv python list` | uv 管理下の Python 一覧 |
 ## API
 
 | Method | Path | 説明 |
